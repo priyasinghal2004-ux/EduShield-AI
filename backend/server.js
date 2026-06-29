@@ -3,6 +3,13 @@ const env = require('./src/config/env');
 const connectDB = require('./src/config/db');
 const logger = require('./src/utils/logger');
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "EduShield AI Backend is Running 🚀"
+  });
+});
+
 // Connect to MongoDB
 connectDB();
 
