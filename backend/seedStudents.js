@@ -26,12 +26,14 @@ function rand(min, max) {
 
 async function seed() {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-
-    console.log("✅ MongoDB Connected");
 
     // Purane students delete kar do (optional)
-    await Student.deleteMany({});
+    const count = await Student.countDocuments();
+
+    if (count > 0) {
+    console.log("Students already exist. Skipping seed.");
+    return;
+    }
 
     const students = [];
 
@@ -92,11 +94,10 @@ async function seed() {
 
     console.log(`✅ ${students.length} students inserted successfully`);
 
-    process.exit(0);
 
   } catch (err) {
-    console.error(err);
-    process.exit(1);
+    throw err;   
+
   }
 }
 

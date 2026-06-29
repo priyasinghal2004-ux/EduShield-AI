@@ -2,6 +2,7 @@ const app = require('./src/app');
 const env = require('./src/config/env');
 const connectDB = require('./src/config/db');
 const logger = require('./src/utils/logger');
+const seedStudents = require('./seedStudents');
 
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -11,20 +12,20 @@ app.get("/", (req, res) => {
 });
 
 // Connect to MongoDB
-connectDB();
+connectDB()
+  .then(async () => {
+    await seedStudents();
 
-const seedStudents = require("./seedStudents");
+    const server = app.listen(env.PORT, () => {
+      logger.info(`Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
+    });
 
-// Sirf ek baar run karna
-seedStudents();
-
-const server = app.listen(env.PORT, () => {
-  logger.info(`Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err, promise) => {
-  logger.error(`Error: ${err.message}`);
-  // Close server & exit process
-  server.close(() => process.exit(1));
-});
+    process.on('unhandledRejection', (err) => {
+      logger.error(`Error: ${err.message}`);
+      server.close(() => process.exit(1));
+    });
+  })
+  .catch((err) => {
+    logger.error(err);
+    process.exit(1);
+  });
