@@ -1,0 +1,13 @@
+# AI Service gitignore
+
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+*.log
+.DS_Store
+
+# Model artifacts — generated offline, not committed
+model_artifacts/*.pkl

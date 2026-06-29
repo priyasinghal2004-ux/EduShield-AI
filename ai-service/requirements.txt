@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+scikit-learn
+shap
+pandas
+numpy
+joblib
+python-dotenv
