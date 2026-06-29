@@ -13,6 +13,11 @@ app.get("/", (req, res) => {
 // Connect to MongoDB
 connectDB();
 
+const seedStudents = require("./seedStudents");
+
+// Sirf ek baar run karna
+seedStudents();
+
 const server = app.listen(env.PORT, () => {
   logger.info(`Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
 });
