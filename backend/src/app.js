@@ -6,10 +6,12 @@ const corsOptions = require('./config/corsOptions');
 const errorHandler = require('./middleware/error.middleware');
 
 // Route imports
+// Route imports
 const authRoutes = require('./routes/auth.routes');
 const studentRoutes = require('./routes/student.routes');
 const predictionRoutes = require('./routes/prediction.routes');
 const interventionRoutes = require('./routes/intervention.routes');
+const helpRequestRoutes = require('./routes/helpRequest.routes');
 
 const app = express();
 
@@ -25,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/interventions', interventionRoutes);
+app.use('/api/help-requests', helpRequestRoutes);
 
 // 404 handler
 app.use((req, res, next) => {

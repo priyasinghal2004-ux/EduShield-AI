@@ -2,9 +2,11 @@ import { useState } from "react";
 import QuickOptions from "./QuickOptions";
 import { X } from "lucide-react";
 import FinancialMenu from "./FinancialMenu";
+import NeedHelpForm from "./NeedHelpForm";
 
 export default function ChatWindow({ onClose }) {
     const [messages, setMessages] = useState([]);
+    const [showNeedHelpForm, setShowNeedHelpForm] = useState(false);
     const [showFinancialMenu, setShowFinancialMenu] = useState(false);
     const handleOptionClick = (option) => {
         let reply = "";
@@ -35,10 +37,10 @@ export default function ChatWindow({ onClose }) {
                     "💵 Fee Assistance\n\nPlease contact your class teacher. They can review your case and help you apply for fee concessions or financial aid.";
                 break;
 
-            case "Need Help":
-                reply =
-                    "🆘 Please describe your problem. In the next version, your request will be sent directly to your teacher.";
-                break;
+                case "Need Help":
+                    reply = "Please fill out the support request form below.";
+                    setShowNeedHelpForm(true);
+                    break;
 
             default:
                 reply = "How can I help you?";
@@ -84,6 +86,7 @@ export default function ChatWindow({ onClose }) {
                 {showFinancialMenu && (
                     <FinancialMenu onSelect={handleOptionClick} />
                 )}
+                {showNeedHelpForm && <NeedHelpForm />}
                 {messages.map((msg, index) => (
                     <div key={index} className="mt-4">
                         <div className="bg-blue-100 text-blue-900 p-3 rounded-xl text-sm font-medium">

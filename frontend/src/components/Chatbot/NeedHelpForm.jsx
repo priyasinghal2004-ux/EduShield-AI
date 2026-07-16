@@ -1,14 +1,27 @@
+import axiosInstance from "../../api/axiosInstance";
 import { useState } from "react";
 
 export default function NeedHelpForm() {
   const [problem, setProblem] = useState("");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!problem.trim()) return;
-
-    alert("Support request sent successfully!");
-
-    setProblem("");
+  
+    try {
+      await axiosInstance.post("/help-requests", {
+        studentId: "STU-001",
+        studentName: "Demo Student",
+        message: problem,
+        type: "general",
+      });
+  
+      alert("Support request sent successfully!");
+  
+      setProblem("");
+    } catch (err) {
+      alert("Failed to send request.");
+      console.error(err);
+    }
   };
 
   return (
