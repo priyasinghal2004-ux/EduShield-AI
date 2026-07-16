@@ -20,6 +20,22 @@ export default function TeacherDashboard() {
   const [helpRequests, setHelpRequests] = useState([]);
   const [stats, setStats] = useState({ total: 0, critical: 0, high: 0, medium: 0, low: 0 });
 
+  const resolveRequest = async (id) => {
+    try {
+      await axiosInstance.patch(`/help-requests/${id}`);
+
+      setHelpRequests((prev) =>
+        prev.map((request) =>
+          request._id === id
+            ? { ...request, status: "resolved" }
+            : request
+        )
+      );
+    } catch (err) {
+      console.error("Failed to resolve request", err);
+    }
+  };
+
   useEffect(() => {
     const fetchTeacherData = async () => {
       try {
@@ -135,6 +151,51 @@ export default function TeacherDashboard() {
                 </div>
               </button>
             </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+            <h3 className="text-lg font-semibold text-red-600 mb-4">
+              🚨 Pending Help Requests
+            </h3>
+
+            {helpRequests.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                No pending help requests.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {helpRequests
+                  .filter((request) => request.status === "pending")
+                  .map((request) => (
+                    <div
+                      key={request._id}
+                      className="border rounded-lg p-3 bg-red-50"
+                    >
+                      <p className="font-semibold">
+                        {request.studentName}
+                      </p>
+
+                      <p className="text-sm text-gray-600 mt-1">
+                        {request.message}
+                      </p>
+
+                      <div className="mt-3 flex justify-between items-center">
+                        <span className="px-2 py-1 rounded-full bg-red-100 text-red-600 text-xs font-semibold">
+                          {request.status}
+                        </span>
+
+                        <button
+                          onClick={() => resolveRequest(request._id)}
+                          className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs hover:bg-green-700"
+                        >
+                          Resolve
+                        </button>
+
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
 
           {/* Recent Interventions */}

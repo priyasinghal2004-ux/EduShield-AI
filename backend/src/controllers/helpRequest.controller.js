@@ -33,3 +33,24 @@ exports.getHelpRequests = async (req, res) => {
     });
   }
 };
+
+// Resolve Help Request
+exports.resolveHelpRequest = async (req, res) => {
+  try {
+    const request = await HelpRequest.findByIdAndUpdate(
+      req.params.id,
+      { status: "resolved" },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: request,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
