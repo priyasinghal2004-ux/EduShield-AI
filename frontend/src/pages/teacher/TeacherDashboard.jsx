@@ -1,3 +1,4 @@
+import ChatBot from "../../components/Chatbot/ChatBot";
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -169,6 +170,7 @@ export default function TeacherDashboard() {
           </div>
         </div>
       </div>
+      <ChatBot />
     </div>
   );
 }
