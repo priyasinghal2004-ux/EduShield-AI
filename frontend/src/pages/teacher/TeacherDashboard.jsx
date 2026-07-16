@@ -176,7 +176,13 @@ export default function TeacherDashboard() {
                       </p>
 
                       <p className="text-sm text-gray-600 mt-1">
-                        {request.message}
+                        {request.type === "mental-health" ? (
+                          <span className="text-red-600 font-semibold">
+                            🧠 {request.message}
+                          </span>
+                        ) : (
+                          request.message
+                        )}
                       </p>
 
                       <div className="mt-3 flex justify-between items-center">

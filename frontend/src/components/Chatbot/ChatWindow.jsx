@@ -1,25 +1,40 @@
+import MentalHealthMenu from "./MentalHealthMenu";
 import { useState } from "react";
 import QuickOptions from "./QuickOptions";
 import { X } from "lucide-react";
 import FinancialMenu from "./FinancialMenu";
 import NeedHelpForm from "./NeedHelpForm";
+import MentalHealthActions from "./MentalHealthActions";
+import axiosInstance from "../../api/axiosInstance";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ChatWindow({ onClose }) {
+    const { currentUser } = useAuth();
     const [messages, setMessages] = useState([]);
     const [showNeedHelpForm, setShowNeedHelpForm] = useState(false);
     const [showFinancialMenu, setShowFinancialMenu] = useState(false);
-    const handleOptionClick = (option) => {
+    const [showMentalMenu, setShowMentalMenu] = useState(false);
+    const [showMentalActions, setShowMentalActions] = useState(false);
+    const handleOptionClick = async (option) => {
         let reply = "";
 
         switch (option) {
             case "Financial Assistance":
                 reply = "Please choose one of the following financial support options.";
                 setShowFinancialMenu(true);
+                setShowMentalMenu(false);
                 break;
 
             case "Mental Health":
+                reply = "Please choose what you're experiencing.";
+                setShowMentalMenu(true);
+                setShowFinancialMenu(false);
+                break;
+
+            case "Stress":
                 reply =
-                    "🧠 If you're feeling stressed or anxious, I can help you connect with your teacher or counsellor.";
+                    "😔 It's okay to feel stressed sometimes.\n\nYou can:\n• Talk to your class teacher\n• Book a counsellor session\n• Try some breathing exercises.";
+                setShowMentalActions(true);
                 break;
 
             case "Scholarships":
@@ -37,10 +52,41 @@ export default function ChatWindow({ onClose }) {
                     "💵 Fee Assistance\n\nPlease contact your class teacher. They can review your case and help you apply for fee concessions or financial aid.";
                 break;
 
-                case "Need Help":
-                    reply = "Please fill out the support request form below.";
-                    setShowNeedHelpForm(true);
-                    break;
+            case "Talk to Teacher":
+                try {
+                    await axiosInstance.post("/help-requests", {
+                        studentId: "STU-001",
+                        studentName: "Demo Student",
+                        message: "Student requested to talk to a teacher regarding mental health.",
+                        type: "mental-health",
+                    });
+
+                    reply =
+                        "📞 Your teacher has been informed and will contact you soon.";
+                } catch (err) {
+                    console.error(err.response?.data || err);
+                    reply = "❌ Failed to notify teacher.";
+                }
+                setShowMentalActions(false);
+                break;
+
+            case "Book Counsellor":
+                reply =
+                    "👩‍⚕️ Counsellor booking feature will be available in the next version. Meanwhile, please contact your teacher.";
+
+                setShowMentalActions(false);
+                break;
+
+            case "Self Help Tips":
+                reply =
+                    "🧘 Here are some tips to help you feel better:\n\n• Take deep breaths for 5 minutes\n• Drink enough water\n• Take short study breaks\n• Talk to someone you trust\n• Get enough sleep";
+                setShowMentalActions(false);
+                break;
+
+            case "Need Help":
+                reply = "Please fill out the support request form below.";
+                setShowNeedHelpForm(true);
+                break;
 
             default:
                 reply = "How can I help you?";
@@ -85,6 +131,12 @@ export default function ChatWindow({ onClose }) {
                 <QuickOptions onSelect={handleOptionClick} />
                 {showFinancialMenu && (
                     <FinancialMenu onSelect={handleOptionClick} />
+                )}
+                {showMentalMenu && (
+                    <MentalHealthMenu onSelect={handleOptionClick} />
+                )}
+                {showMentalActions && (
+                    <MentalHealthActions onSelect={handleOptionClick} />
                 )}
                 {showNeedHelpForm && <NeedHelpForm />}
                 {messages.map((msg, index) => (

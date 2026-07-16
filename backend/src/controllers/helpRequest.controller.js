@@ -27,6 +27,8 @@ exports.getHelpRequests = async (req, res) => {
       data: requests,
     });
   } catch (err) {
+    console.error("HELP REQUEST ERROR:", err);
+
     res.status(500).json({
       success: false,
       message: err.message,

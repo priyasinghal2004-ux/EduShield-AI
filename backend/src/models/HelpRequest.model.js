@@ -19,8 +19,7 @@ const HelpRequestSchema = new mongoose.Schema(
 
     type: {
       type: String,
-      enum: ["mental", "financial", "general"],
-      default: "general",
+      enum: ["general", "financial", "academic", "mental-health"],
     },
 
     status: {
