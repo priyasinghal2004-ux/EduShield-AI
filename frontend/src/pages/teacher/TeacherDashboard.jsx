@@ -13,10 +13,11 @@ import { formatRelativeTime, formatInterventionType, formatInterventionStatus } 
 
 export default function TeacherDashboard() {
   const { currentUser } = useAuth();
-  
+
   const [students, setStudents] = useState([]);
   const [recentInterventions, setRecentInterventions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [helpRequests, setHelpRequests] = useState([]);
   const [stats, setStats] = useState({ total: 0, critical: 0, high: 0, medium: 0, low: 0 });
 
   useEffect(() => {
@@ -25,12 +26,18 @@ export default function TeacherDashboard() {
         const res = await axiosInstance.get('/students');
         const studentsData = res.data.data;
 
+        try {
+          const helpRes = await axiosInstance.get("/help-requests");
+          setHelpRequests(helpRes.data.data || []);
+        } catch (e) {
+          console.error("Failed to load help requests", e);
+        }
         console.log("Teacher User:", currentUser);
         console.log("Students API:", studentsData);
-        
+
         // Ensure predictions for all students
         const studentIds = studentsData.map(s => s.studentId);
-        
+
         if (studentIds.length > 0) {
           try {
             await axiosInstance.post('/predictions/batch', { studentIds });
@@ -38,7 +45,7 @@ export default function TeacherDashboard() {
             console.warn("Batch prediction failed:", e.message);
           }
         }
-        
+
         let allInterventions = [];
 
         const enrichedStudents = await Promise.all(studentsData.map(async (student) => {
@@ -50,10 +57,10 @@ export default function TeacherDashboard() {
           }
 
           try {
-             const intRes = await axiosInstance.get(`/interventions/student/${student.studentId}`);
-             const ints = intRes.data.data.map(i => ({...i, student}));
-             allInterventions = [...allInterventions, ...ints];
-          } catch (e) {}
+            const intRes = await axiosInstance.get(`/interventions/student/${student.studentId}`);
+            const ints = intRes.data.data.map(i => ({ ...i, student }));
+            allInterventions = [...allInterventions, ...ints];
+          } catch (e) { }
 
           return student;
         }));
@@ -64,7 +71,7 @@ export default function TeacherDashboard() {
         const low = enrichedStudents.filter(s => s.prediction.riskLabel === 'low').length;
 
         setStats({ total: enrichedStudents.length, critical, high, medium, low });
-        
+
         // Sort students by risk score (highest first)
         enrichedStudents.sort((a, b) => b.prediction.riskScore - a.prediction.riskScore);
         setStudents(enrichedStudents);
@@ -155,7 +162,7 @@ export default function TeacherDashboard() {
                         {intervention.description}
                       </p>
                       <div className="mt-2 flex items-center justify-between">
-                         <span className="text-xs text-gray-500 italic">
+                        <span className="text-xs text-gray-500 italic">
                           Status: {formatInterventionStatus(intervention.status)}
                         </span>
                       </div>
