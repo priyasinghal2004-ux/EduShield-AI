@@ -29,12 +29,13 @@ import {
     },
   ];
   
-  export default function QuickOptions() {
+  export default function QuickOptions({ onSelect }) {
     return (
       <div className="grid grid-cols-1 gap-3 mt-5">
         {options.map((item) => (
           <button
             key={item.title}
+            onClick={() => onSelect(item.title)}
             className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-blue-500 transition"
           >
             <div className="text-blue-600">{item.icon}</div>
