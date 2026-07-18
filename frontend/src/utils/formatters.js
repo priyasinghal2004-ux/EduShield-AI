@@ -38,8 +38,10 @@ export function formatRelativeTime(dateString) {
  * @returns {string} e.g. "82%"
  */
 export function formatScore(score) {
-  if (score === null || score === undefined) return '—'
-  return `${Math.round(score * 100)}%`
+  if (score === null || score === undefined) return '—';
+
+  const value = score <= 1 ? score * 100 : score;
+  return `${Math.round(value)}%`;
 }
 
 /**
