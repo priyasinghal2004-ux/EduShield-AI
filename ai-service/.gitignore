@@ -10,4 +10,4 @@ venv/
 .DS_Store
 
 # Model artifacts — generated offline, not committed
-model_artifacts/*.pkl
+# model_artifacts/*.pkl

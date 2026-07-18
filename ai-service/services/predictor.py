@@ -32,8 +32,9 @@ class Predictor:
             
         try:
             processed_data = self.preprocessor.transform(data)
-            prob = float(self.model.predict_proba(processed_data)[0][1])
-            score = int(prob * 100)
+            prediction = self.model.predict(processed_data)[0]
+            risk_map = {"Low": 25, "Medium": 60, "High": 90}
+            score = risk_map[prediction]
             
             if score >= 80:
                 level = "Critical"
@@ -47,7 +48,7 @@ class Predictor:
             return PredictionResponse(
                 riskScore=score,
                 riskLabel=level,
-                dropoutProbability=prob
+                dropoutProbability=score / 100
             )
         except Exception as e:
             logger.error(f"Prediction failed: {str(e)}. Falling back to mock data.")
