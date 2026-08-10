@@ -6,28 +6,28 @@ import {
     LifeBuoy,
   } from "lucide-react";
   
-  const options = [
+const options = [
     {
-      icon: <HeartHandshake size={20} />,
-      title: "Mental Health",
+        icon: <HeartHandshake size={20} />,
+        title: "Mental Health",
     },
     {
-      icon: <Wallet size={20} />,
-      title: "Financial Assistance",
+        icon: <Wallet size={20} />,
+        title: "Financial Assistance",
     },
     {
-      icon: <GraduationCap size={20} />,
-      title: "Scholarships",
+        icon: <GraduationCap size={20} />,
+        title: "Scholarships",
     },
     {
-      icon: <Building2 size={20} />,
-      title: "NGO Support",
+        icon: <Building2 size={20} />,
+        title: "NGO Support",
     },
     {
-      icon: <LifeBuoy size={20} />,
-      title: "Need Help",
+        icon: <LifeBuoy size={20} />,
+        title: "Need Help",
     },
-  ];
+];
   
   export default function QuickOptions({ onSelect }) {
     return (

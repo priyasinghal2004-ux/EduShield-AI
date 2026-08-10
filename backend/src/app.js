@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const corsOptions = require('./config/corsOptions');
 const errorHandler = require('./middleware/error.middleware');
+const chatRoutes = require("./routes/chat.routes");
 
 // Route imports
 // Route imports
@@ -28,6 +29,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/interventions', interventionRoutes);
 app.use('/api/help-requests', helpRequestRoutes);
+app.use("/api/chat", chatRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
