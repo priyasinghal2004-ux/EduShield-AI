@@ -10,9 +10,23 @@ const seedInMemoryDB = async () => {
   logger.info('Seeding in-memory DB...');
   try {
     const admin = new User({ name: 'Dr. Sarah Admin', email: 'admin@edushield.ai', password: 'admin123', role: 'admin' });
-    const teacher = new User({ name: 'Maria Flores', email: 'teacher@edushield.ai', password: 'teacher123', role: 'teacher', assignedClass: 'Class-A' });
+    const teacher = new User({
+      name: 'Aditi Sharma',
+      email: 'teacher@edushield.ai',
+      password: 'teacher123',
+      role: 'teacher',
+      assignedClass: 'Class-A'
+    });
+    const student = new User({
+      name: 'Ansh Bansal',
+      email: 'student@edushield.ai',
+      password: 'student123',
+      role: 'student',
+      studentId: 'STU-018'
+    });
     await admin.save();
     await teacher.save();
+    await student.save();
 
     const dbStudents = DUMMY_STUDENTS.map(s => {
       const dbStudent = { ...s };
@@ -44,8 +58,8 @@ const connectDB = async () => {
         logger.info(`In-memory MongoDB Connected: ${mongoUri}`);
         await seedInMemoryDB();
       } catch (memError) {
-         logger.error(`In-memory MongoDB failed: ${memError.message}`);
-         process.exit(1);
+        logger.error(`In-memory MongoDB failed: ${memError.message}`);
+        process.exit(1);
       }
     } else {
       process.exit(1);

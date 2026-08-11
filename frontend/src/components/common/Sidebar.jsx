@@ -6,7 +6,7 @@ import { ROLES } from '../../constants/roles';
 
 export default function Sidebar() {
   const { currentUser } = useAuth();
-  
+
   const adminLinks = [
     { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/admin/users', icon: Users, label: 'User Management' },
@@ -18,7 +18,17 @@ export default function Sidebar() {
     { to: '/teacher/student/STU-001', icon: GraduationCap, label: 'Student Profile' }, // Just an example link for now
   ];
 
-  const links = currentUser?.role === ROLES.ADMIN ? adminLinks : teacherLinks;
+  const studentLinks = [
+    { to: '/student', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/student/profile', icon: GraduationCap, label: 'Student Profile' },
+  ];
+
+  const links =
+    currentUser?.role === ROLES.ADMIN
+      ? adminLinks
+      : currentUser?.role === ROLES.TEACHER
+        ? teacherLinks
+        : studentLinks;
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
@@ -32,10 +42,9 @@ export default function Sidebar() {
             to={link.to}
             end={link.to === '/admin' || link.to === '/teacher'}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-brand-50 text-brand-600'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
+                ? 'bg-brand-50 text-brand-600'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`
             }
           >

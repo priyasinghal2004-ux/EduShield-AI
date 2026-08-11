@@ -1,9 +1,8 @@
-// TODO: Application role constants.
-// Responsibilities:
-//   - Export string constants for all user roles
-//   - Used by ProtectedRoute, role.middleware, and User model
+// Application role constants.
+// Used by authentication, protected routes, middleware, and user model.
 
 export const ROLES = {
   ADMIN: 'admin',
   TEACHER: 'teacher',
-}
+  STUDENT: 'student',
+};

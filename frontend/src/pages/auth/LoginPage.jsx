@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -17,23 +17,28 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
-    
+
     try {
       const user = await login(email, password);
+
       if (user.role === ROLES.ADMIN) {
         navigate('/admin');
-      } else {
+      } else if (user.role === ROLES.TEACHER) {
         navigate('/teacher');
+      } else if (user.role === ROLES.STUDENT) {
+        navigate('/student');
+      } else {
+        throw new Error('Invalid user role');
       }
+
     } catch (err) {
-      setError(err.message || 'Invalid credentials');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden">
       <div className="p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
@@ -91,14 +96,36 @@ export default function LoginPage() {
 
         <div className="mt-8 border-t border-gray-200 pt-6">
           <h3 className="text-sm font-medium text-gray-900 mb-3 text-center">Demo Credentials</h3>
-          <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-gray-600">
             <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-              <strong className="block text-gray-900 mb-1">Admin</strong>
-              admin@edushield.ai<br/>admin123
+              <strong className="block text-gray-900 mb-1">
+                Teacher
+              </strong>
+              <span className="text-[11px] whitespace-nowrap">
+                teacher@edushield.ai
+              </span>
+              <br />
+              teacher123
             </div>
             <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-              <strong className="block text-gray-900 mb-1">Teacher</strong>
-              teacher@edushield.ai<br/>teacher123
+              <strong className="block text-gray-900 mb-1">
+                Admin
+              </strong>
+              <span className="text-[11px] whitespace-nowrap">
+                admin@edushield.ai
+              </span>
+              <br />
+              admin123
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <strong className="block text-gray-900 mb-1">
+                Student
+              </strong>
+              <span className="text-[11px] whitespace-nowrap">
+                student@edushield.ai
+              </span>
+              <br />
+              student123
             </div>
           </div>
         </div>

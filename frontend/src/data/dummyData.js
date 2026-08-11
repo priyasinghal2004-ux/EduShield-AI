@@ -1,8 +1,8 @@
 // ─── Dummy Student Data Generator ───────────────────────────────────────────
 // Generates 30 realistic student records for the frontend.
 
-const firstNames = ['James','Sofia','Marcus','Aisha','Ethan','Lily','Jordan','Destiny','Noah','Priya','Carlos','Emma','Lucas','Mia','Benjamin','Isabella','Elijah','Ava','William','Sophia','Mason','Charlotte','Michael','Amelia','Alexander','Harper','Jacob','Evelyn','Logan','Abigail'];
-const lastNames = ['Mitchell','Hernandez','Thompson','Okafor','Park','Chen','Rivera','Williams','Johnson','Sharma','Mendez','Davis','Miller','Garcia','Rodriguez','Martinez','Brown','Jones','Smith','Taylor','Anderson','Thomas','Jackson','White','Harris','Martin','Lee','Walker','Hall','Allen'];
+const firstNames = ['James', 'Sofia', 'Marcus', 'Aisha', 'Ethan', 'Lily', 'Jordan', 'Destiny', 'Noah', 'Priya', 'Carlos', 'Emma', 'Lucas', 'Mia', 'Benjamin', 'Isabella', 'Elijah', 'Ava', 'Ansh', 'Sophia', 'Mason', 'Charlotte', 'Michael', 'Amelia', 'Alexander', 'Harper', 'Jacob', 'Evelyn', 'Logan', 'Abigail'];
+const lastNames = ['Mitchell', 'Hernandez', 'Thompson', 'Okafor', 'Park', 'Chen', 'Rivera', 'Williams', 'Johnson', 'Sharma', 'Mendez', 'Davis', 'Miller', 'Garcia', 'Rodriguez', 'Martinez', 'Brown', 'Jones', 'Bansal', 'Taylor', 'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Martin', 'Lee', 'Walker', 'Hall', 'Allen'];
 
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -15,12 +15,12 @@ function randomFloat(min, max) {
 function generateStudent(idIndex) {
   const isHighRisk = Math.random() < 0.2; // 20% chance of being high/critical risk
   const isMediumRisk = Math.random() < 0.3; // 30% chance of being medium risk
-  
+
   const grade = randomInt(9, 12);
   const totalDays = 180;
-  
+
   let presentDays, absentDays, tardy, consecutiveAbsences, gpa, failedCourses, disciplinaryIncidents, riskScore;
-  
+
   if (isHighRisk) {
     presentDays = randomInt(100, 140);
     gpa = randomFloat(1.0, 2.2);
@@ -43,10 +43,10 @@ function generateStudent(idIndex) {
     consecutiveAbsences = randomInt(0, 1);
     riskScore = randomFloat(0.05, 0.39);
   }
-  
+
   absentDays = totalDays - presentDays;
   tardy = randomInt(0, 15);
-  
+
   let riskLabel = 'low';
   if (riskScore >= 0.8) riskLabel = 'critical';
   else if (riskScore >= 0.6) riskLabel = 'high';
@@ -94,7 +94,14 @@ function generateStudent(idIndex) {
     grade,
     assignedClass: idIndex % 2 === 0 ? 'Class-A' : 'Class-B',
     enrollmentStatus: 'enrolled',
-    demographics: { age: grade + 5, gender: idIndex % 2 === 0 ? 'Female' : 'Male' },
+    demographics: {
+      age: grade + 5,
+      gender: idIndex === 18
+        ? 'Male'
+        : idIndex % 2 === 0
+          ? 'Female'
+          : 'Male'
+    },
     attendance: { totalDays, present: presentDays, absent: absentDays, tardy, consecutiveAbsences },
     academics: {
       gpa,
@@ -120,14 +127,14 @@ export const DUMMY_STUDENTS = Array.from({ length: 30 }, (_, i) => generateStude
 
 // ─── Dummy Users ──────────────────────────────────────────────────────────────
 export const DUMMY_USERS = [
-  { _id: 'u1', name: 'Dr. Sarah Admin', email: 'admin@edushield.ai',   role: 'admin',   isActive: true, createdAt: '2026-01-10' },
-  { _id: 'u2', name: 'Maria Flores',    email: 'teacher@edushield.ai', role: 'teacher', isActive: true, assignedClass: 'Class-A', createdAt: '2026-01-12' },
-  { _id: 'u3', name: 'Alex Johnson',    email: 'alex@edushield.ai',    role: 'teacher', isActive: true, assignedClass: 'Class-B', createdAt: '2026-01-15' },
+  { _id: 'u1', name: 'Dr. Sarah Admin', email: 'admin@edushield.ai', role: 'admin', isActive: true, createdAt: '2026-01-10' },
+  { _id: 'u2', name: 'Maria Flores', email: 'teacher@edushield.ai', role: 'teacher', isActive: true, assignedClass: 'Class-A', createdAt: '2026-01-12' },
+  { _id: 'u3', name: 'Alex Johnson', email: 'alex@edushield.ai', role: 'teacher', isActive: true, assignedClass: 'Class-B', createdAt: '2026-01-15' },
 ]
 
 // ─── Mock Auth Credentials ────────────────────────────────────────────────────
 export const MOCK_CREDENTIALS = {
-  'admin@edushield.ai':   { password: 'admin123',   user: DUMMY_USERS[0] },
+  'admin@edushield.ai': { password: 'admin123', user: DUMMY_USERS[0] },
   'teacher@edushield.ai': { password: 'teacher123', user: DUMMY_USERS[1] },
 }
 
@@ -135,8 +142,8 @@ export const MOCK_CREDENTIALS = {
 export function getDashboardStats() {
   const students = DUMMY_STUDENTS
   const critical = students.filter(s => s.prediction.riskLabel === 'critical').length
-  const high     = students.filter(s => s.prediction.riskLabel === 'high').length
-  const medium   = students.filter(s => s.prediction.riskLabel === 'medium').length
-  const low      = students.filter(s => s.prediction.riskLabel === 'low').length
+  const high = students.filter(s => s.prediction.riskLabel === 'high').length
+  const medium = students.filter(s => s.prediction.riskLabel === 'medium').length
+  const low = students.filter(s => s.prediction.riskLabel === 'low').length
   return { total: students.length, critical, high, medium, low }
 }
