@@ -43,10 +43,40 @@ const seedInMemoryDB = async () => {
   }
 };
 
+const seedProductionDB = async () => {
+  try {
+    logger.info('Checking production demo users...');
+
+    const existingStudent = await User.findOne({
+      email: 'student@edushield.ai'
+    });
+
+    if (!existingStudent) {
+      const student = new User({
+        name: 'Ansh Bansal',
+        email: 'student@edushield.ai',
+        password: 'student123',
+        role: 'student',
+        studentId: 'STU-018',
+        assignedClass: 'Class-A'
+      });
+
+      await student.save();
+      logger.info('Production student demo user created.');
+    } else {
+      logger.info('Production student demo user already exists.');
+    }
+
+  } catch (err) {
+    logger.error(`Production seeding failed: ${err.message}`);
+  }
+};
+
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(env.MONGO_URI, { serverSelectionTimeoutMS: 2000 });
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
+    await seedProductionDB();
   } catch (error) {
     logger.warn(`Primary MongoDB connection failed: ${error.message}`);
     if (env.NODE_ENV !== 'production') {
