@@ -47,6 +47,46 @@ const seedProductionDB = async () => {
   try {
     logger.info('Checking production demo users...');
 
+    // Demo Admin
+    const existingAdmin = await User.findOne({
+      email: 'admin@edushield.ai'
+    });
+
+    if (!existingAdmin) {
+      const admin = new User({
+        name: 'Dr. Sarah Admin',
+        email: 'admin@edushield.ai',
+        password: 'admin123',
+        role: 'admin'
+      });
+
+      await admin.save();
+      logger.info('Production admin demo user created.');
+    } else {
+      logger.info('Production admin demo user already exists.');
+    }
+
+    // Demo Teacher
+    const existingTeacher = await User.findOne({
+      email: 'teacher@edushield.ai'
+    });
+
+    if (!existingTeacher) {
+      const teacher = new User({
+        name: 'Maria Flores',
+        email: 'teacher@edushield.ai',
+        password: 'teacher123',
+        role: 'teacher',
+        assignedClass: 'Class-A'
+      });
+
+      await teacher.save();
+      logger.info('Production teacher demo user created.');
+    } else {
+      logger.info('Production teacher demo user already exists.');
+    }
+
+    // Demo Student
     const existingStudent = await User.findOne({
       email: 'student@edushield.ai'
     });
