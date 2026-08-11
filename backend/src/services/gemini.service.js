@@ -431,6 +431,21 @@ function getLocalResponse(message, history = []) {
             };
         }
 
+        // Student says someone at school has been told
+        if (
+            isYes(text) &&
+            (
+                lastAssistant.includes("has a teacher, counselor, parent") ||
+                lastAssistant.includes("trusted adult been told")
+            )
+        ) {
+            return {
+                handled: true,
+                reply:
+                    "I'm glad someone you trust knows about it. 💙 Having support can make things a little easier.\n\nWould you like help talking through what you want to do next?"
+            };
+        }
+
 
         // Online
         if (
