@@ -4,9 +4,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const corsOptions = require('./config/corsOptions');
 const errorHandler = require('./middleware/error.middleware');
-const chatRoutes = require("./routes/chat.routes");
+const chatRoutes = require('./routes/chat.routes');
 
-// Route imports
 // Route imports
 const authRoutes = require('./routes/auth.routes');
 const studentRoutes = require('./routes/student.routes');
@@ -21,7 +20,9 @@ app.use(helmet());
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+app.use(
+  morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev')
+);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -29,11 +30,22 @@ app.use('/api/students', studentRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/interventions', interventionRoutes);
 app.use('/api/help-requests', helpRequestRoutes);
-app.use("/api/chat", chatRoutes);
+app.use('/api/chat', chatRoutes);
+
+// Root / Health Check Route
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'EduShield AI Backend is Running 🚀'
+  });
+});
 
 // 404 handler
 app.use((req, res, next) => {
-  res.status(404).json({ success: false, message: 'API Route Not Found' });
+  res.status(404).json({
+    success: false,
+    message: 'API Route Not Found'
+  });
 });
 
 // Global Error Handler
