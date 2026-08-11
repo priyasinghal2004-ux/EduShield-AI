@@ -6,7 +6,11 @@ export default function ProtectedRoute({ allowedRoles }) {
   const { currentUser, loading } = useAuth();
 
   if (loading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   if (!currentUser) {
@@ -14,12 +18,21 @@ export default function ProtectedRoute({ allowedRoles }) {
   }
 
   if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
-    // Redirect to their respective default dashboards if they try to access wrong role routes
+    // Redirect user to their own dashboard
     if (currentUser.role === 'admin') {
       return <Navigate to="/admin" replace />;
-    } else {
+    }
+
+    if (currentUser.role === 'teacher') {
       return <Navigate to="/teacher" replace />;
     }
+
+    if (currentUser.role === 'student') {
+      return <Navigate to="/student" replace />;
+    }
+
+    // Unknown role
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;

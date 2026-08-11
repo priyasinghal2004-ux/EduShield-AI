@@ -34,7 +34,6 @@ export default function LoginPage() {
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
-      {
         setIsSubmitting(false);
       }
   };
