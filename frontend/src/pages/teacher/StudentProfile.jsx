@@ -1,250 +1,263 @@
-import ChatBot from "../../components/Chatbot/ChatBot";
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import RiskSummaryCard from '../../components/dashboard/RiskSummaryCard';
-import StudentTable from '../../components/dashboard/StudentTable';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Mail, Phone, Plus } from 'lucide-react';
+import axiosInstance from '../../api/axiosInstance';
+import AttendanceCard from '../../components/student/AttendanceCard';
+import GradesCard from '../../components/student/GradesCard';
+import BehaviorCard from '../../components/student/BehaviorCard';
+import ShapExplanationChart from '../../components/student/ShapExplanationChart';
+import InterventionList from '../../components/intervention/InterventionList';
+import InterventionForm from '../../components/intervention/InterventionForm';
+import Modal from '../../components/common/Modal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Spinner from '../../components/common/Spinner';
-import { Plus, Users, Calendar, AlertTriangle } from 'lucide-react';
-import axiosInstance from '../../api/axiosInstance';
-import { formatRelativeTime, formatInterventionType, formatInterventionStatus } from '../../utils/formatters';
+import { getRiskClasses, getRiskDisplayLabel, getRiskEmoji } from '../../utils/riskHelpers';
+import { formatScore, formatDate } from '../../utils/formatters';
 
-export default function TeacherDashboard() {
-  const { currentUser } = useAuth();
+export default function StudentProfile() {
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-  const [students, setStudents] = useState([]);
-  const [recentInterventions, setRecentInterventions] = useState([]);
+  const [student, setStudent] = useState(null);
+  const [prediction, setPrediction] = useState(null);
+  const [interventions, setInterventions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [helpRequests, setHelpRequests] = useState([]);
-  const [stats, setStats] = useState({ total: 0, critical: 0, high: 0, medium: 0, low: 0 });
-
-  const resolveRequest = async (id) => {
-    try {
-      await axiosInstance.patch(`/help-requests/${id}`);
-
-      setHelpRequests((prev) =>
-        prev.map((request) =>
-          request._id === id
-            ? { ...request, status: "resolved" }
-            : request
-        )
-      );
-    } catch (err) {
-      console.error("Failed to resolve request", err);
-    }
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchTeacherData = async () => {
+    const fetchStudentData = async () => {
       try {
-        const res = await axiosInstance.get('/students');
-        const studentsData = res.data.data;
+        // First try direct studentId lookup
+        let studentData = null;
 
         try {
-          const helpRes = await axiosInstance.get("/help-requests");
-          setHelpRequests(helpRes.data.data || []);
-        } catch (e) {
-          console.error("Failed to load help requests", e);
+          const studentRes = await axiosInstance.get(`/students/${id}`);
+          studentData = studentRes.data.data;
+        } catch (directError) {
+          console.warn("Direct student lookup failed, trying student list...");
+
+          // Fallback: fetch all students and find by studentId
+          const studentsRes = await axiosInstance.get('/students');
+          const students = studentsRes.data.data || [];
+
+          studentData = students.find(
+            (student) => student.studentId === id
+          );
         }
-        console.log("Teacher User:", currentUser);
-        console.log("Students API:", studentsData);
 
-        // Ensure predictions for all students
-        const studentIds = studentsData.map(s => s.studentId);
+        if (!studentData) {
+          throw new Error(`Student ${id} not found`);
+        }
 
-        if (studentIds.length > 0) {
+        setStudent(studentData);
+
+        // Get latest prediction
+        try {
+          const predRes = await axiosInstance.get(
+            `/predictions/${id}/latest`
+          );
+
+          setPrediction(
+            predRes.data.data || {
+              riskScore: 0,
+              riskLabel: 'low'
+            }
+          );
+        } catch (predictionError) {
+          console.warn(
+            "Prediction lookup failed:",
+            predictionError.message
+          );
+
+          // Try generating prediction
           try {
-            await axiosInstance.post('/predictions/batch', { studentIds });
-          } catch (e) {
-            console.warn("Batch prediction failed:", e.message);
+            const newPredRes = await axiosInstance.post(
+              `/predictions/${id}`
+            );
+
+            setPrediction(newPredRes.data.data);
+          } catch (generateError) {
+            console.warn(
+              "Prediction generation failed:",
+              generateError.message
+            );
+
+            setPrediction({
+              riskScore: 0,
+              riskLabel: 'low'
+            });
           }
         }
 
-        let allInterventions = [];
+        // Get interventions
+        try {
+          const intRes = await axiosInstance.get(
+            `/interventions/student/${id}`
+          );
 
-        const enrichedStudents = await Promise.all(studentsData.map(async (student) => {
-          try {
-            const predRes = await axiosInstance.get(`/predictions/${student.studentId}/latest`);
-            student.prediction = predRes.data.data || { riskScore: 0, riskLabel: 'low' };
-          } catch (e) {
-            student.prediction = { riskScore: 0, riskLabel: 'low' };
-          }
+          setInterventions(intRes.data.data || []);
+        } catch (interventionError) {
+          console.warn(
+            "Interventions could not be loaded:",
+            interventionError.message
+          );
 
-          try {
-            const intRes = await axiosInstance.get(`/interventions/student/${student.studentId}`);
-            const ints = intRes.data.data.map(i => ({ ...i, student }));
-            allInterventions = [...allInterventions, ...ints];
-          } catch (e) { }
-
-          return student;
-        }));
-
-        const critical = enrichedStudents.filter(s => s.prediction.riskLabel === 'critical').length;
-        const high = enrichedStudents.filter(s => s.prediction.riskLabel === 'high').length;
-        const medium = enrichedStudents.filter(s => s.prediction.riskLabel === 'medium').length;
-        const low = enrichedStudents.filter(s => s.prediction.riskLabel === 'low').length;
-
-        setStats({ total: enrichedStudents.length, critical, high, medium, low });
-
-        // Sort students by risk score (highest first)
-        enrichedStudents.sort((a, b) => b.prediction.riskScore - a.prediction.riskScore);
-        setStudents(enrichedStudents);
-
-        allInterventions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setRecentInterventions(allInterventions.slice(0, 5));
+          // Empty interventions should NOT break the profile
+          setInterventions([]);
+        }
 
       } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
+        console.error('Failed to load student:', err);
+        setStudent(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTeacherData();
-  }, []);
+    fetchStudentData();
+  }, [id]);
 
   if (loading) {
     return <div className="flex h-full items-center justify-center"><Spinner size="xl" /></div>;
   }
 
+  if (!student) {
+    return (
+      <div className="flex flex-col justify-center items-center h-64 gap-4">
+        <p className="text-gray-500 text-lg">Student profile not found.</p>
+        <Button onClick={() => navigate(-1)}>Go Back</Button>
+      </div>
+    );
+  }
+
+  const riskLabel = prediction?.riskLabel || 'low';
+  const riskScore = prediction?.riskScore || 0;
+
+  const handleAddIntervention = async (data) => {
+    try {
+      const res = await axiosInstance.post('/interventions', {
+        studentId: student.studentId,
+        ...data
+      });
+      setInterventions([res.data.data, ...interventions]);
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Failed to log intervention', err);
+      alert('Failed to log intervention');
+    }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome back, {currentUser?.name}</h1>
-          <p className="text-gray-600 mt-1">Overview of students in {currentUser?.assignedClass || 'your class'}.</p>
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      {/* Header Navigation */}
+      <div>
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-brand-600 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        </button>
+      </div>
+
+      {/* Profile Header */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="flex items-center gap-6">
+          <div className="w-20 h-20 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-3xl shrink-0">
+            {student.firstName.charAt(0)}{student.lastName.charAt(0)}
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              {student.firstName} {student.lastName}
+            </h1>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-600">
+              <span className="font-medium text-gray-900">{student.studentId}</span>
+              <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+              <span>Grade {student.grade}</span>
+              <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+              <span>{student.demographics.age} years old</span>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button variant="outline" size="sm" className="gap-2 bg-gray-50 text-gray-600">
+                <Mail className="w-3.5 h-3.5" /> Message Parent
+              </Button>
+              <Button variant="outline" size="sm" className="gap-2 bg-gray-50 text-gray-600">
+                <Phone className="w-3.5 h-3.5" /> Call Home
+              </Button>
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex items-center gap-2 bg-white">
-            <Calendar className="w-4 h-4" /> Schedule Meeting
-          </Button>
-          <Button className="flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Log Intervention
-          </Button>
+
+        {/* Risk Score Highlight */}
+        <div className={`shrink-0 rounded-xl p-6 border flex flex-col items-center justify-center min-w-[200px] ${getRiskClasses(riskLabel).replace('border', 'border-2')} bg-white`}>
+          <div className="text-sm font-semibold uppercase tracking-wider opacity-80 mb-1">
+            AI Risk Score
+          </div>
+          <div className="text-5xl font-black flex items-center gap-2 mb-2">
+            {formatScore(riskScore)}
+          </div>
+          <Badge className={getRiskClasses(riskLabel)}>
+            {getRiskEmoji(riskLabel)} {getRiskDisplayLabel(riskLabel)}
+          </Badge>
+          <div className="text-xs opacity-70 mt-3 text-center">
+            Last updated: {prediction?.createdAt ? formatDate(prediction.createdAt) : 'N/A'}
+          </div>
         </div>
       </div>
 
-      <RiskSummaryCard stats={stats} />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <AttendanceCard attendance={student.attendance} />
+        <GradesCard academics={student.academics} />
+        <BehaviorCard behavior={student.behavior} />
+      </div>
 
+      {/* Deep Dive Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <StudentTable students={students} title="My Classroom" />
-        </div>
-        <div className="lg:col-span-1 space-y-6">
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              <button className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-brand-50 hover:border-brand-200 hover:text-brand-700 transition-colors group">
-                <div className="flex items-center gap-3 text-gray-700 group-hover:text-brand-700">
-                  <AlertTriangle className="w-5 h-5 text-orange-500" />
-                  <span className="font-medium text-sm">Review At-Risk Students</span>
-                </div>
-                <Badge variant="red">{stats.critical + stats.high}</Badge>
-              </button>
-              <button className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-brand-50 hover:border-brand-200 hover:text-brand-700 transition-colors group">
-                <div className="flex items-center gap-3 text-gray-700 group-hover:text-brand-700">
-                  <Users className="w-5 h-5 text-blue-500" />
-                  <span className="font-medium text-sm">Message Parents</span>
-                </div>
-              </button>
-            </div>
+
+        {/* SHAP Explanation */}
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col">
+          <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+            <h3 className="text-lg font-semibold text-gray-900">Why did the AI assign this score?</h3>
+            <p className="text-sm text-gray-500 mt-1">Feature impact analysis (SHAP values) indicating the top contributing factors.</p>
           </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
-            <h3 className="text-lg font-semibold text-red-600 mb-4">
-              🚨 Pending Help Requests
-            </h3>
-
-            {helpRequests.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                No pending help requests.
-              </p>
+          <div className="p-6 flex-1">
+            {prediction?.shapValues && prediction.shapValues.length > 0 ? (
+              <ShapExplanationChart shapValues={prediction.shapValues} />
             ) : (
-              <div className="space-y-3">
-                {helpRequests
-                  .filter((request) => request.status === "pending")
-                  .map((request) => (
-                    <div
-                      key={request._id}
-                      className="border rounded-lg p-3 bg-red-50"
-                    >
-                      <p className="font-semibold">
-                        {request.studentName}
-                      </p>
-
-                      <p className="text-sm text-gray-600 mt-1">
-                        {request.type === "mental-health" ? (
-                          <span className="text-red-600 font-semibold">
-                            🧠 {request.message}
-                          </span>
-                        ) : (
-                          request.message
-                        )}
-                      </p>
-
-                      <div className="mt-3 flex justify-between items-center">
-                        <span className="px-2 py-1 rounded-full bg-red-100 text-red-600 text-xs font-semibold">
-                          {request.status}
-                        </span>
-
-                        <button
-                          onClick={() => resolveRequest(request._id)}
-                          className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs hover:bg-green-700"
-                        >
-                          Resolve
-                        </button>
-
-                      </div>
-                    </div>
-                  ))}
-              </div>
+              <p className="text-gray-500 text-center py-8">No SHAP data available for this prediction.</p>
             )}
           </div>
+        </div>
 
-          {/* Recent Interventions */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-[calc(100%-140px)]">
-            <div className="p-6 border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900">Recent Interventions</h3>
+        {/* Interventions */}
+        <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col max-h-[600px]">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Interventions</h3>
+              <p className="text-sm text-gray-500 mt-0.5">Recorded actions taken</p>
             </div>
-            <div className="flex-1 overflow-y-auto p-2">
-              {recentInterventions.length === 0 ? (
-                <div className="text-center p-6 text-gray-500 text-sm">No recent interventions logged.</div>
-              ) : (
-                <div className="divide-y divide-gray-50">
-                  {recentInterventions.map((intervention) => (
-                    <div key={intervention._id} className="p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex justify-between items-start mb-1">
-                        <Link to={`/teacher/student/${intervention.student.studentId}`} className="font-medium text-sm text-gray-900 hover:text-brand-600 transition-colors">
-                          {intervention.student.firstName} {intervention.student.lastName}
-                        </Link>
-                        <span className="text-xs text-gray-500">{formatRelativeTime(intervention.createdAt)}</span>
-                      </div>
-                      <div className="text-xs font-medium text-brand-600 mb-2">
-                        {formatInterventionType(intervention.type)}
-                      </div>
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {intervention.description}
-                      </p>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-xs text-gray-500 italic">
-                          Status: {formatInterventionStatus(intervention.status)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-              <Button variant="ghost" className="w-full text-sm">View All Interventions</Button>
-            </div>
+            <Button size="sm" onClick={() => setIsModalOpen(true)} className="gap-1.5 shrink-0">
+              <Plus className="w-4 h-4" /> Add
+            </Button>
+          </div>
+          <div className="p-4 overflow-y-auto flex-1">
+            <InterventionList interventions={interventions} />
           </div>
         </div>
       </div>
-      <ChatBot />
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Log New Intervention"
+      >
+        <InterventionForm
+          onSubmit={handleAddIntervention}
+          onCancel={() => setIsModalOpen(false)}
+        />
+      </Modal>
+
     </div>
   );
 }
