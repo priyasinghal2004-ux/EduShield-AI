@@ -247,11 +247,11 @@ function getLocalResponse(message, history = []) {
 
     const text = message.toLowerCase().trim();
 
-    const intent = detectIntent(message);
-
     const lastAssistant = getLastAssistantMessage(history);
 
     const historyText = getHistoryText(history);
+
+    const intent = detectIntent(message);
 
 
     // =================================================
@@ -391,6 +391,43 @@ function getLocalResponse(message, history = []) {
             handled: true,
             reply:
                 "You're welcome. 💙 I'm here whenever you need help."
+        };
+    }
+
+
+    // =================================================
+    // BULLYING FOLLOW-UP CONTEXT
+    // Handles short answers like "yes" / "no"
+    // based on the previous chatbot question.
+    // =================================================
+
+    const bullyingFollowUp =
+        lastAssistant.includes("has a teacher, counselor, parent") ||
+        lastAssistant.includes("trusted adult been told") ||
+        lastAssistant.includes("is it happening at school") ||
+        lastAssistant.includes("is it happening at school, online") ||
+        lastAssistant.includes("has anyone at school been told");
+
+    if (bullyingFollowUp && isNo(text)) {
+        return {
+            handled: true,
+            reply:
+                "That's okay. Taking the first step can be difficult. 💙\n\nWould you feel comfortable telling a teacher, counselor, or another trusted adult?"
+        };
+    }
+
+    if (
+        bullyingFollowUp &&
+        isYes(text) &&
+        (
+            lastAssistant.includes("has a teacher, counselor, parent") ||
+            lastAssistant.includes("trusted adult been told")
+        )
+    ) {
+        return {
+            handled: true,
+            reply:
+                "I'm glad someone you trust knows about it. 💙 Having support can make things a little easier.\n\nWould you like help talking through what you want to do next?"
         };
     }
 
